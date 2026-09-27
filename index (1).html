@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Coin Exchange</title>
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;background:#111;color:#222}
+.phone{width:min(100%,430px);min-height:100vh;margin:auto;background:#f7f7f7;padding:22px 18px}
+h1{margin:8px 0;font-size:26px}.muted{color:#777;font-size:13px}
+.card{background:#fff;border-radius:16px;padding:18px;box-shadow:0 4px 20px #0001;margin-top:18px}
+label{display:block;color:#666;font-size:13px;margin:12px 0 7px}
+.search{display:flex;gap:8px}input{flex:1;padding:14px;border:1px solid #ddd;border-radius:11px;font-size:16px;outline:none}
+button{border:0;border-radius:11px;font-weight:700;cursor:pointer}.search button{background:#111;color:#fff;padding:0 17px}
+.profile{display:none;align-items:center;gap:13px;padding:14px;margin-top:14px;border:1px solid #eee;border-radius:13px}
+.avatar{width:55px;height:55px;border-radius:50%;background:linear-gradient(135deg,#20d51b,#5b5bff);display:grid;place-items:center;color:#fff;font-size:22px;font-weight:800}
+.profile-info{flex:1}.username{font-weight:800}.name{font-size:13px;color:#777;margin-top:4px}
+.open{background:#20d51b;color:white;padding:10px 12px}.error{display:none;color:#c62828;margin-top:10px;font-size:13px}
+.balance{font-size:32px;font-weight:800;margin:8px 0}.amt{padding:12px;border:1px solid #ddd;background:#fff;border-radius:10px;font-weight:700}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:8px}.primary{width:100%;padding:15px;background:#20d51b;color:#fff;font-size:17px;margin-top:16px}
+.note{font-size:12px;color:#777;line-height:1.4;margin-top:14px}.hidden{display:none!important}
+.success{text-align:center;padding-top:45px}.check{width:74px;height:74px;border-radius:50%;background:#20d51b;color:#fff;font-size:45px;line-height:74px;margin:auto}
+.result{background:#fff;border-radius:15px;padding:18px;margin-top:20px}.line{display:flex;justify-content:space-between;padding:11px 0;border-bottom:1px solid #eee}
+.back{width:100%;padding:14px;background:#eee;margin-top:18px;font-size:16px}
+</style>
+</head>
+<body>
+<div class="phone">
+<section id="main">
+<div class="muted">Coin Exchange</div><h1>Поиск аккаунта</h1>
+<div class="card">
+<label>Введите TikTok username</label>
+<div class="search"><input id="search" placeholder="@username" autocomplete="off"><button onclick="findAccount()">Найти</button></div>
+<div id="error" class="error">Аккаунт не найден.</div>
+<div id="profile" class="profile">
+<div id="avatar" class="avatar">?</div><div class="profile-info"><div id="username" class="username"></div><div id="name" class="name"></div></div>
+<button class="open" onclick="openTikTok()">Открыть</button>
+</div>
+</div>
+<div id="exchangeCard" class="card hidden">
+<div class="muted">Выбранный аккаунт</div><h1 id="selected"></h1>
+<div class="balance">2,000,000</div><div class="muted">Coins</div>
+<label>Количество монет</label>
+<div class="row"><button class="amt" onclick="setAmount(10000)">10 000</button><button class="amt" onclick="setAmount(100000)">100 000</button><button class="amt" onclick="setAmount(1000000)">1 000 000</button><button class="amt" onclick="setAmount(2000000)">2 000 000</button></div>
+<input id="coins" type="number" value="2000000" min="1" style="width:100%;margin-top:10px">
+<button class="primary" onclick="exchange()">Exchange</button>
+<div class="note">Операция создаётся только в интерфейсе страницы.</div>
+</div>
+</section>
+<section id="success" class="hidden success">
+<div class="check">✓</div><h1>Операция создана</h1><div class="muted">Информация об операции</div>
+<div class="result"><div class="line"><span>Получатель</span><b id="outUser"></b></div><div class="line"><span>Coins</span><b id="outCoins"></b></div><div class="line"><span>Статус</span><b>Создано</b></div></div>
+<button class="back" onclick="location.reload()">← Вернуться</button>
+</section>
+</div>
+<script>
+let selectedUser="";
+function cleanUser(v){v=v.trim();if(!v)return "";if(!v.startsWith("@"))v="@"+v;return v}
+function findAccount(){
+const u=cleanUser(document.getElementById("search").value),error=document.getElementById("error"),profile=document.getElementById("profile"),exchange=document.getElementById("exchangeCard");
+error.style.display="none";profile.style.display="none";exchange.classList.add("hidden");if(!u)return;
+const accounts={"@heart_love33":{name:"Heart Love",letter:"H"},"@usern1d4k0lifq":{name:"Demo User",letter:"D"},"@sogolkola_svg":{name:"Sogolkola",letter:"S"}};
+const account=accounts[u.toLowerCase()];
+if(!account){error.style.display="block";return}
+selectedUser=u;document.getElementById("username").textContent=u;document.getElementById("name").textContent=account.name;document.getElementById("avatar").textContent=account.letter;document.getElementById("selected").textContent=u;profile.style.display="flex";exchange.classList.remove("hidden");
+}
+function openTikTok(){window.open("https://www.tiktok.com/"+selectedUser,"_blank")}
+function setAmount(n){document.getElementById("coins").value=n}
+function exchange(){const n=Number(document.getElementById("coins").value||0);if(n<1){alert("Введите количество монет");return}document.getElementById("outUser").textContent=selectedUser;document.getElementById("outCoins").textContent=n.toLocaleString("en-US")+" Coins";document.getElementById("main").classList.add("hidden");document.getElementById("success").classList.remove("hidden")}
+</script>
+</body></html>
