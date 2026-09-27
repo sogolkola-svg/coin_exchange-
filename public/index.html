@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Exchange</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: Arial, sans-serif;
+      background: #fff;
+      color: #111;
+    }
+
+    .page {
+      max-width: 520px;
+      margin: 0 auto;
+      padding: 55px 22px;
+    }
+
+    h1 {
+      font-size: 32px;
+      margin: 0 0 35px;
+      font-weight: 700;
+    }
+
+    label {
+      display: block;
+      font-size: 16px;
+      margin-bottom: 10px;
+      font-weight: 600;
+    }
+
+    input {
+      width: 100%;
+      height: 52px;
+      border: 1px solid #ccc;
+      border-radius: 10px;
+      padding: 0 16px;
+      font-size: 17px;
+      outline: none;
+      margin-bottom: 22px;
+    }
+
+    input:focus {
+      border-color: #111;
+    }
+
+    button {
+      width: 100%;
+      height: 54px;
+      border: 0;
+      border-radius: 10px;
+      background: #111;
+      color: white;
+      font-size: 17px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    button:disabled {
+      opacity: .5;
+    }
+
+    .balance {
+      margin: 25px 0;
+      padding: 20px;
+      border-radius: 12px;
+      background: #f5f5f5;
+      display: none;
+    }
+
+    .balance-title {
+      font-size: 14px;
+      color: #666;
+      margin-bottom: 8px;
+    }
+
+    .balance-value {
+      font-size: 28px;
+      font-weight: 700;
+    }
+
+    .message {
+      margin-top: 20px;
+      padding: 15px;
+      border-radius: 10px;
+      display: none;
+    }
+
+    .success {
+      background: #e9f8ed;
+      color: #147333;
+    }
+
+    .error {
+      background: #fdeaea;
+      color: #b42318;
+    }
+
+    .history {
+      margin-top: 35px;
+      display: none;
+    }
+
+    .history h2 {
+      font-size: 20px;
+      margin-bottom: 15px;
+    }
+
+    .transaction {
+      padding: 14px 0;
+      border-bottom: 1px solid #eee;
+      font-size: 14px;
+    }
+
+    .transaction strong {
+      display: block;
+      margin-bottom: 5px;
+    }
+  </style>
+</head>
+
+<body>
+
+<div class="page">
+
+  <h1>Exchange</h1>
+
+  <label for="username">TikTok Username</label>
+  <input
+    id="username"
+    type="text"
+    placeholder="@username"
+  >
+
+  <button id="searchBtn">Search Account</button>
+
+  <div class="balance" id="balanceBox">
+    <div class="balance-title">Available Balance</div>
+    <div class="balance-value" id="balance">$0.00</div>
+  </div>
+
+  <div id="exchangeArea" style="display:none;">
+
+    <label for="amount">Amount</label>
+
+    <input
+      id="amount"
+      type="number"
+      min="1"
+      step="1"
+      placeholder="Enter amount"
+    >
+
+    <button id="exchangeBtn">
+      Exchange
+    </button>
+
+  </div>
+
+  <div id="message" class="message"></div>
+
+  <div class="history" id="history">
+    <h2>Transaction History</h2>
+    <div id="historyList"></div>
+  </div>
+
+</div>
+
+<script>
+  let currentUsername = "";
+
+  const usernameInput = document.getElementById("username");
+  const searchBtn = document.getElementById("searchBtn");
+  const balanceBox = document.getElementById("balanceBox");
+  const balance = document.getElementById("balance");
+  const exchangeArea = document.getElementById("exchangeArea");
+  const amountInput = document.getElementById("amount");
+  const exchangeBtn = document.getElementById("exchangeBtn");
+  const message = document.getElementById("message");
+  const history = document.getElementById("history");
+  const historyList = document.getElementById("historyList");
+
+  function showMessage(text, type) {
+    message.textContent = text;
+    message.className = "message " + type;
+    message.style.display = "block";
+  }
+
+  function hideMessage() {
+    message.style.display = "none";
+  }
+
+  function formatMoney(value) {
+    return "$" + Number(value).toLocaleString("en-US", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    });
+  }
+
+  async function loadHistory() {
+    const response = await fetch(
+      "/api/transactions?username=" +
+      encodeURIComponent(currentUsername)
+    );
+
+    const rows = await response.json();
+
+    historyList.innerHTML = "";
+
+    rows.forEach(row => {
+      const item = document.createElement("div");
+      item.className = "transaction";
+
+      item.innerHTML =
+        "<strong>Exchange: -" +
+        Number(row.amount).toLocaleString("en-US") +
+        "</strong>" +
+        "Balance after: " +
+        formatMoney(row.balance_after) +
+        "<br>Transaction ID: " +
+        row.id;
+
+      historyList.appendChild(item);
+    });
+
+    history.style.display = rows.length ? "block" : "none";
+  }
+
+  searchBtn.addEventListener("click", async () => {
+
+    hideMessage();
+
+    const username = usernameInput.value.trim();
+
+    if (!username) {
+      showMessage("Введите username", "error");
+      return;
+    }
+
+    searchBtn.disabled = true;
+
+    try {
+
+      const response = await fetch(
+        "/api/account?username=" +
+        encodeURIComponent(username)
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Аккаунт не найден");
+      }
+
+      currentUsername = data.username;
+
+      balance.textContent = formatMoney(data.balance);
+
+      balanceBox.style.display = "block";
+      exchangeArea.style.display = "block";
+
+      await loadHistory();
+
+    } catch (error) {
+
+      balanceBox.style.display = "none";
+      exchangeArea.style.display = "none";
+
+      showMessage(error.message, "error");
+
+    } finally {
+
+      searchBtn.disabled = false;
+
+    }
+  });
+
+  exchangeBtn.addEventListener("click", async () => {
+
+    hideMessage();
+
+    const amount = Number(amountInput.value);
+
+    if (!amount || amount <= 0) {
+      showMessage("Введите корректную сумму", "error");
+      return;
+    }
+
+    exchangeBtn.disabled = true;
+
+    try {
+
+      const response = await fetch("/api/exchange", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          username: currentUsername,
+          amount: amount
+        })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        throw new Error(data.error || "Ошибка транзакции");
+      }
+
+      balance.textContent = formatMoney(data.balance);
+
+      amountInput.value = "";
+
+      showMessage(
+        "Transaction completed. ID: " +
+        data.transactionId,
+        "success"
+      );
+
+      await loadHistory();
+
+    } catch (error) {
+
+      showMessage(error.message, "error");
+
+    } finally {
+
+      exchangeBtn.disabled = false;
+
+    }
+  });
+</script>
+
+</body>
+</html>
